@@ -21,6 +21,7 @@ This repo contains my solutions to the 3 assignments of the course Deep Learning
 - Flow-based models (theory only)
 
 Next to the code, under each assignment folder one can find my report (*Report.pdf*) outlining the theory and obtained results.
+If you're interested, [here](https://github.com/uvadlc) is the official github repository of the course including past versions of assignments.
 
 ## Environments
 A conda environment called `dl2020` is provided. It contains all packages needed for the course (practicals and tutorials). For your own computer, use the file [`environment.yml`](https://github.com/uvadlc/uvadlc_practicals_2020/blob/master/environment.yml) to create the environment. For your account on Lisa (UvA supercomputer), please use the file [`environment_Lisa.yml`](https://github.com/uvadlc/uvadlc_practicals_2020/blob/master/environment_Lisa.yml) which installs the environment `dl2020` with CUDA 10.1 support. 
