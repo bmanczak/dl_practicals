@@ -1,0 +1,126 @@
+"""
+This module implements a bidirectional LSTM in PyTorch.
+You should fill in code into indicated sections.
+Date: 2020-11-09
+"""
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+import torch.nn as nn
+import torch
+import math
+
+"""
+python train.py --model_type biLSTM --device cpu --train_steps 2000 --learning_rate 0.001 --batch_size 128 --num_hidden 128 --input_length 11 --seed 2
+"""
+class biLSTM(nn.Module):
+
+    def __init__(self, seq_length, input_dim, hidden_dim, num_classes,
+                 batch_size, device):
+        super(biLSTM, self).__init__()
+
+        self.hidden_dim = hidden_dim
+        self.device = device
+
+        self.lstm_cell = LSTMCell(seq_length, input_dim, hidden_dim, num_classes,
+                                  batch_size, device)
+
+        # Output calculation
+        self.W_ph = nn.Parameter(torch.Tensor(2 * hidden_dim, num_classes))
+        self.b_p = nn.Parameter(torch.Tensor(num_classes))
+
+        self.kaiming_init()
+        self.logSoftmax = nn.LogSoftmax(dim=1)
+
+    def kaiming_init(self):
+        for p in self.parameters():
+            if len(p.size()) == 2:
+                p.data.normal_(0, 1 / math.sqrt(2*self.hidden_dim)) # 2 beceause W_ph is a combination of forward and backward pass
+            else:
+                p.data.fill_(0)
+
+    def forward(self, x):
+        x_forward = x
+        x_backward = torch.flip(x, dims=[1]) # look at the sequence backward
+
+        # Forward step
+        c_forward = torch.zeros(self.hidden_dim).to(self.device)
+        h_forward = torch.zeros(self.hidden_dim).to(self.device)
+        c_T, h_T = self.lstm_cell(x_forward, c_forward, h_forward)
+
+        # Backward step
+        c_0, h_0 = self.lstm_cell(x_backward, c_T, h_T)
+
+        H = torch.cat((h_T, h_0), -1)
+
+        out = self.logSoftmax((H @ self.W_ph + self.b_p))
+        return out
+
+
+class LSTMCell(nn.Module):
+
+    def __init__(self, seq_length, input_dim, hidden_dim, num_classes,
+                 batch_size, device):
+
+        super(LSTMCell, self).__init__()
+
+        input_dim = int(0.25*hidden_dim) # as suggested by Philiph on Piazza, setting the embedding size to 1/4 of the hidden_dim
+
+        self.embeddings = nn.Embedding(seq_length,input_dim )
+        self.seq_length = seq_length
+        self.hidden_dim = hidden_dim
+        self.device = device
+
+        # Input modulation gate
+        self.W_gx = nn.Parameter(torch.Tensor(input_dim, hidden_dim))
+        self.W_gh = nn.Parameter(torch.Tensor(hidden_dim, hidden_dim))
+        self.b_g = nn.Parameter(torch.Tensor(hidden_dim))
+
+        # Input gate
+        self.W_ix = nn.Parameter(torch.Tensor(input_dim, hidden_dim))
+        self.W_ih = nn.Parameter(torch.Tensor(hidden_dim, hidden_dim))
+        self.b_i = nn.Parameter(torch.Tensor(hidden_dim))
+
+        # Forget gate
+        self.W_fx = nn.Parameter(torch.Tensor(input_dim, hidden_dim))
+        self.W_fh = nn.Parameter(torch.Tensor(hidden_dim, hidden_dim))
+        self.b_f = nn.Parameter(torch.Tensor(hidden_dim))
+
+        # Output gate
+        self.W_ox = nn.Parameter(torch.Tensor(input_dim, hidden_dim))
+        self.W_oh = nn.Parameter(torch.Tensor(hidden_dim, hidden_dim))
+        self.b_o = nn.Parameter(torch.Tensor(hidden_dim))
+
+        self.kaiming_init()
+        self.logSoftmax = nn.LogSoftmax(dim=1)
+
+    def kaiming_init(self):
+        for p in self.parameters():
+            if len(p.size()) == 2:
+                p.data.normal_(0, 1 / math.sqrt(self.hidden_dim))
+            else:
+                p.data.fill_(0)
+
+    def forward(self, x, c, h):
+
+        h_t = h
+        c_t = c
+        x = self.embeddings(x.long())
+
+        for time in range(self.seq_length - 1):
+            x_t = x[:, time, :]
+            # Input modulation gate
+            g_t = torch.tanh(x_t @ self.W_gx + h_t @ self.W_gh + self.b_g)
+            # Input gate
+            i_t = torch.sigmoid(x_t @ self.W_ix + h_t @ self.W_ih + self.b_i)
+            # Forget gate
+            f_t = torch.sigmoid(x_t @ self.W_fx + h_t @ self.W_fh + self.b_f)
+            # Output gate
+            o_t = torch.sigmoid(x_t @ self.W_ox + h_t @ self.W_oh + self.b_o)
+            # Cell state
+            c_t = g_t * i_t + c_t * f_t
+            h_t = torch.tanh(c_t) * o_t
+
+        return c_t, h_t
