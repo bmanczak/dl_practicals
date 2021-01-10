@@ -4,18 +4,18 @@
 
 This repo contains my solutions to the 3 assignments of the course Deep Learning realised at the Univeristy of Amsterdam in Fall 2020. Among others, here you can find **PyTorch** implemenations and/or theory of the following:
 
-### Assignment 1:
+### Assignment 1 (score 96/100):
 - MLP (additionally coded in NumPy from scratch)
 - Custom module for Layer Normalization
 - CNN VGG13 architecture with skip connections.
 
-### Assignment 2:
+### Assignment 2 (score 105/100):
 - Vanilla LSTM 
 - bi-LSTM
 - Application: LSTM for text generation
 - Graph Neural Networks (theory only)
 
-### Assignment 3:
+### Assignment 3 (score TBA):
 - VAE
 - GAN
 - Flow-based models (theory only)
