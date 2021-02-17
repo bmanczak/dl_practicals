@@ -15,7 +15,7 @@ This repo contains my solutions to the 3 assignments of the course Deep Learning
 - Application: LSTM for text generation
 - Graph Neural Networks (theory only)
 
-### Assignment 3 (score TBA):
+### Assignment 3 (score 95/100):
 - VAE
 - GAN
 - Flow-based models (theory only)
